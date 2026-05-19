@@ -23,21 +23,45 @@ namespace CPUFramework
         }
         public static DataTable GetDataTable(SqlCommand cmd)
         {
+            return DoExecuteSql(cmd, true);
+        }
+        private static DataTable DoExecuteSql(SqlCommand cmd, bool loadtable)
+        {
             DataTable dt = new();
             using(SqlConnection conn = new SqlConnection(SQLUtility.ConnectionString))
             {
                 conn.Open();
                 cmd.Connection = conn;
                 Debug.Print(GetSQL(cmd));
-                SqlDataReader dr = cmd.ExecuteReader();
-                dt.Load(dr);
+                try
+                {
+                    SqlDataReader dr = cmd.ExecuteReader();
+                    if (loadtable == true)
+                    {
+                        dt.Load(dr);
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    string msg = ParseConstraintMessage(ex.Message);
+                    throw new Exception(msg);
+                }
+                catch (InvalidCastException ex)
+                {
+                    throw new Exception(cmd.CommandText + ": " + ex.Message, ex);
+                }
+
             }
             SetAllColumnsAllowNull(dt);
             return dt;
         }
         public static DataTable GetDataTable(string sqlstatement)
         {
-            return GetDataTable(new SqlCommand(sqlstatement));
+            return DoExecuteSql(new SqlCommand(sqlstatement), true);
+        }
+        public static void ExecuteSQL(SqlCommand cmd)
+        {
+            DoExecuteSql(cmd, false);
         }
 
         public static void ExecuteSQL(string sqlstatement)
@@ -45,6 +69,79 @@ namespace CPUFramework
             GetDataTable(sqlstatement);
         }
 
+        public static void SetParamValues(SqlCommand cmd, string paramname, object value)
+        {
+            try
+            {
+                cmd.Parameters[paramname].Value = value;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(cmd.CommandText + ": " + ex.Message);
+            }
+        }
+        private static string ParseConstraintMessage(string msg)
+        {
+            string origmsg = msg;
+            string prefix = "ck_";
+            string msgend = "";
+            if (msg.Contains(prefix)== false)
+            {
+                if (msg.Contains("u_"))
+                {
+                    prefix = "u_";
+                    msgend = "must be unique";
+                }
+                else if (msg.Contains("f_"))
+                {
+                    prefix = "f_";
+                }
+            }
+            if (msg.Contains(prefix))
+            {
+                msg = msg.Replace("\"", "'");
+                int pos = msg.IndexOf(prefix) + prefix.Length;
+                msg = msg.Substring(pos);
+                pos = msg.IndexOf("'");
+                if (pos == -1)
+                {
+                    msg = origmsg;
+                }
+                else
+                {
+                    msg = msg.Substring(0, pos);
+                    msg = msg.Replace("_", " ");
+                    msg = msg + msgend;
+                    
+                    if (prefix == "f_")
+                    {
+                        var words = msg.Split(" ");
+                        if (words.Length > 1)
+                        {
+                            msg = $"Cannot delete {words[1]} beacuse it has a related {words[1]} record.";
+                        }
+
+                    }
+                }
+            }
+            return msg;
+        }
+        public static string GetFirstColumnFirstRowValueAsString(string sql)
+        {
+            string s = "";
+
+            DataTable dt = GetDataTable(sql);
+
+            if (dt.Rows.Count > 0 && dt.Columns.Count > 0)
+            {
+                if (dt.Rows[0][0] != DBNull.Value)
+                {
+                    s = dt.Rows[0][0].ToString() ?? "";
+                }
+            }
+
+            return s;
+        }
         public static int GetFirstColumnFirstRowValue(string sql)
         {
             int n = 0;
