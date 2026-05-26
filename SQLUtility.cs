@@ -25,6 +25,19 @@ namespace CPUFramework
         {
             return DoExecuteSql(cmd, true);
         }
+
+        /*public static void SaveDataTable(DataRow row, string sprocname)
+        {
+            SqlCommand cmd = GetSqlCommand(sprocname);
+            foreach(DataColumn col in row.Table.Columns)
+            {
+                string paramname = $"@{col.ColumnName}";
+                if (cmd.Parameters.Contains(paramname))
+                {
+                    cmd.Parameters
+                }
+            }
+        }*/
         private static DataTable DoExecuteSql(SqlCommand cmd, bool loadtable)
         {
             DataTable dt = new();
@@ -133,7 +146,7 @@ namespace CPUFramework
                 if (msg.Contains("u_"))
                 {
                     prefix = "u_";
-                    msgend = "must be unique";
+                    msgend = "";
                 }
                 else if (msg.Contains("f_"))
                 {
