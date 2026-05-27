@@ -26,7 +26,7 @@ namespace CPUFramework
             return DoExecuteSql(cmd, true);
         }
 
-        /*public static void SaveDataTable(DataRow row, string sprocname)
+        public static void SaveDataTable(DataRow row, string sprocname)
         {
             SqlCommand cmd = GetSqlCommand(sprocname);
             foreach(DataColumn col in row.Table.Columns)
@@ -34,10 +34,24 @@ namespace CPUFramework
                 string paramname = $"@{col.ColumnName}";
                 if (cmd.Parameters.Contains(paramname))
                 {
-                    cmd.Parameters
+                    cmd.Parameters[paramname].Value = row[col.ColumnName];
                 }
             }
-        }*/
+            DoExecuteSql(cmd, false);
+
+            foreach(SqlParameter p in cmd.Parameters)
+            {
+                if(p.Direction == ParameterDirection.InputOutput)
+                {
+                    string colname = p.ParameterName.Substring(1);
+                    if (row.Table.Columns.Contains(colname))
+                    {
+                        row.Table.Columns[colname].ReadOnly = false;
+                        row[colname] = p.Value;
+                    }
+                }
+            }
+        }
         private static DataTable DoExecuteSql(SqlCommand cmd, bool loadtable)
         {
             DataTable dt = new();
