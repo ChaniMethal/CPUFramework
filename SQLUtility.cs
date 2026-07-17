@@ -296,6 +296,7 @@ namespace CPUFramework
             {
                 c.AllowDBNull = true;
                 c.AutoIncrement = false;
+                c.ReadOnly = false;
             }
         }
         public static int GetValueFromFirstRowAsInt(DataTable dt, string columnname)
