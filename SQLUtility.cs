@@ -183,7 +183,7 @@ namespace CPUFramework
                 throw new Exception(cmd.CommandText + ": " + ex.Message);
             }
         }
-        private static string ParseConstraintMessage(string msg)
+        public static string ParseConstraintMessage(string msg)
         {
             string origmsg = msg;
             string prefix = "ck_";
