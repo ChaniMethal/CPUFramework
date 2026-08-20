@@ -222,6 +222,11 @@ namespace CPUFramework
                     msg = msg.Replace("'", "");
                     msg = msg.TrimEnd('.');
                     msg = msg.Replace("_", " ");
+                    if (prefix == notnullprefix && msg.EndsWith("Id"))
+                    {
+                        msg = msg.Substring(0, msg.Length - 2);
+                    }
+
                     msg = msg + msgend;
                     if (prefix == "ck_")
                     {
